@@ -27,7 +27,7 @@ those of the deposit.  ABI.Mint(depositAmount)
 ### User Sign up
 
 - Users visit the DGP website and enter their name and PIN
-- Server creates an ethereum account for the user using a password = Sha3(salt+PIN) + PIN
+- Server creates an ethereum account for the user using a password = Partial Password (P1 = Sha3(salt+PIN))  + PIN
 - Server saves Keystore and partialPassword (P1)
 - Server responds with the Ethereum Keystore file (containing the public ETH adddress)
   and the partial password (P1) which is saved to user storage
