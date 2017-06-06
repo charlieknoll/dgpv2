@@ -26,8 +26,8 @@ contract Dgp {
     event Endowment(address indexed _to, uint256 _value);
     event RemoveClient(address indexed _removed, uint256 _value);
     event Purchase(address indexed _client, address indexed _vendor, uint256 _value);
-    event Refund(address indexed _from, address indexed _to, uint256 _value);
-    event Redemption(address indexed _to, uint256 _value);
+    event Refund(address indexed _vendor, address _client, uint256 _value);
+    event Redemption(address indexed _vendor, uint256 _value);
     
     //access control
 	modifier onlyAdmin { 
@@ -117,22 +117,33 @@ contract Dgp {
         Purchase(msg.sender, _vendorAddress, amount);
     }
     function refundClient(address _clientAddress, uint256 amount) onlyVendorWithBalance() external {
-        
-        
+        if (vendorBalances[msg.sender] < amount) throw;
+        clients[_clientAddress].checkingBalance += amount;
+        Refund(msg.sender,_clientAddress,amount);
     }
     function makePurchaseForClient(address _vendorAddress, address _clientAddress, uint256 amount)
        onlyAdmin() external {
-        
+        uint256 vested = getVested(_clientAddress);
+        if (vested + clients[_clientAddress].checkingBalance < amount) throw;
+        clients[_clientAddress].allocatedEndowments += vested;
+        clients[_clientAddress].checkingBalance += clients[_clientAddress].allocatedEndowments -amount;
+        vendorBalances[_vendorAddress] += amount;
+        Purchase(_clientAddress, _vendorAddress, amount);
         
     }
     
     function redeemPurchases() onlyVendorWithBalance() external {
         
+        uint256 balance = vendorBalances[msg.sender];
+        vendorBalances[msg.sender] = 0;
+        Redemption(msg.sender,balance);
         
     }
-    function redeemPurchasesForVendor() onlyAdmin() external {
+    function redeemPurchasesForVendor(address _vendorAddress) onlyAdmin() external {
         
-        
+        uint256 balance = vendorBalances[_vendorAddress];
+        vendorBalances[_vendorAddress] = 0;
+        Redemption(_vendorAddress,balance);
     }
     
 }
