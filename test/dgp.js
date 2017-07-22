@@ -2,7 +2,13 @@ var Dgp = artifacts.require("./Dgp.sol");
 
 contract('Dgp', function(accounts) {
   var dgp;
-  var initDonation = 1000;
+  var initDonation = 100000; //cents, $1000.00
+  var nonadmin = accounts[1];
+  var client = accounts[2];
+  var clientEndowment = 10000; //cents $100.00
+
+  var clientStartBlock = 10;
+  var vendor = accounts[3];
   
   it("should have 0 balance upon deployment", function() {
     return Dgp.deployed().then(function(instance) {
@@ -24,10 +30,11 @@ contract('Dgp', function(accounts) {
       assert.equal(balance.valueOf(), initDonation, "1000 is the balance after initial donation");
     });
   });
-  var account_one = accounts[1];
+
+   
   it("should not allow other account to register a donation", function() {
-    console.log('account one: ' + accounts[1]);
-     dgp.registerDonation(initDonation, {from: account_one})
+    
+     dgp.registerDonation(initDonation, {from: nonadmin})
      .then(assert.fail)
      .catch(function(error) {
                 assert(
@@ -37,4 +44,22 @@ contract('Dgp', function(accounts) {
                 );
      });
   });
+   
+    it("should allow admin to register a client", function() {
+    
+      dgp.registerClient(client, clientEndowment, clientStartBlock).then(function(){
+        return dgp.accountBalance.call();
+      })
+      .then(function(balance) {
+        assert.equal(balance.valueOf(), initDonation, "registering client should not change account balance");
+      })
+      .then(function(){
+        return dgp.allocated.call();
+      })
+      .then(function(allocated){
+        assert.equal(allocated.valueOf(), clientEndowment, "registering client should not change account balance");
+      })
+  });
+
+  
 });
