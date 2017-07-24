@@ -1,5 +1,15 @@
 var Dgp = artifacts.require("./Dgp.sol");
 
+function Client(c) {
+   var result = {};
+   result.startBlock = parseInt(c[0]);
+   result.lastRedemptionBlock = parseInt(c[1]);
+   result.checkingBalance = parseInt(c[2]);
+   result.depositedEndowments = parseInt(c[3]);
+   result.endowmentTotal = parseInt(c[4]);
+   return result;
+};
+
 contract('Dgp', function(accounts) {
   var dgp;
   var initDonation = 100000; //cents, $1000.00
@@ -26,7 +36,6 @@ contract('Dgp', function(accounts) {
      dgp.registerDonation(initDonation).then(function(){
         return dgp.accountBalance.call();
      }).then(function(balance) {
-       console.log('balance: ' + balance);
       assert.equal(balance.valueOf(), initDonation, "1000 is the balance after initial donation");
     });
   });
@@ -46,7 +55,9 @@ contract('Dgp', function(accounts) {
   });
    
     it("should allow admin to register a client", function() {
-    
+      //web3.eth.getBlockNumber.call().then(b => console.log("BLOCK: " + b));
+      console.log(web3.eth.blockNumber);
+
       dgp.registerClient(client, clientEndowment, clientStartBlock).then(function(){
         return dgp.accountBalance.call();
       })
@@ -59,6 +70,13 @@ contract('Dgp', function(accounts) {
       .then(function(allocated){
         assert.equal(allocated.valueOf(), clientEndowment, "registering client should not change account balance");
       })
+      .then(function(){
+        return dgp.clients.call(client);
+      })
+      .then(function(c){
+        cObj = new Client(c);
+      assert.equal(cObj.endowmentTotal, clientEndowment, "newly registered client receives endowment")
+      });
   });
 
   
