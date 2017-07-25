@@ -1,92 +1,172 @@
 var Dgp = artifacts.require("./Dgp.sol");
+var gasList = [];
 
 function Client(c) {
    var result = {};
-   result.startBlock = parseInt(c[0]);
+   result.startTime = parseInt(c[0]);
    result.lastRedemptionBlock = parseInt(c[1]);
    result.checkingBalance = parseInt(c[2]);
    result.depositedEndowments = parseInt(c[3]);
    result.endowmentTotal = parseInt(c[4]);
    return result;
 };
+function logGas(step,txResult) {
+  gasList.push({ step: step, gas: txResult.receipt.gasUsed});
+}
 const increaseTime = addSeconds => web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [addSeconds], id: 0});
 const increaseDays = addDays => web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [addDays*60*60*24], id: 0});
+const mineBlock = () => web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", params: [], id: 0});
 
 contract('Dgp', function(accounts) {
   var dgp;
   var initDonation = 100000; //cents, $1000.00
-  var nonadmin = accounts[1];
-  var client = accounts[2];
-  var clientEndowment = 10000; //cents $100.00
 
-  var clientStartBlock = 10;
-  var vendor = accounts[3];
+  var nonAdminAddr = accounts[1];
+
+  var clientAddr = accounts[2];
+  var clientAddr2 = accounts[3];
+
+  var clientEndowment = 10000; //cents $100.00
+  var purchaseAmt = 500; //$5.00
+  
+
+  var vendorAddr = accounts[4];
+  
+  Dgp.deployed().then(i => dgp = i);
   
   it("should have 0 balance upon deployment", function() {
-    return Dgp.deployed().then(function(instance) {
-      console.log("-------------------------instance:");
-      //console.log(instance);
-      dgp = instance;
-      return instance.accountBalance.call();
-    }).then(function(balance) {
-      assert.equal(balance.valueOf(), 0, "0 was the initial balance");
-    });
+    return dgp.accountBalance().then(b => assert.equal(b.valueOf(), 0, "0 was the initial balance"));
   });
 
   it("should allow admin to register a donation", function() {
-    console.log('initDonation: ' + initDonation);
-     dgp.registerDonation(initDonation).then(function(){
-        return dgp.accountBalance.call();
-     }).then(function(balance) {
-      assert.equal(balance.valueOf(), initDonation, "1000 is the balance after initial donation");
+     return dgp.registerDonation(initDonation)
+     .then(result => {
+       logGas('register donation',result);
+       return dgp.accountBalance();
+      })
+     .then(b=> assert.equal(b.valueOf(), initDonation, "1000 is the balance after initial donation"));
+  });
+   
+  it("should not allow other account to register a donation", function() {
+     return dgp.registerDonation(initDonation, {from: nonAdminAddr})
+     .then(assert.fail)
+     .catch(e=> assert(e.message.indexOf('invalid opcode') >= 0, "Non admin accounts can''t register a donation"));
+  });
+   
+  var client;
+
+  it("should allow admin to register a client", function() {
+    return dgp.registerClient(clientAddr, clientEndowment, 0)
+    .then(r=> {
+      logGas('register client',r);
+      return dgp.clients.call(clientAddr);
+    })
+    .then( c=> {
+      client = new Client(c);
+      assert.equal(client.endowmentTotal, clientEndowment, "newly registered client receives endowment");
+      assert.equal(client.startTime, web3.eth.getBlock(web3.eth.blockNumber).timestamp, "newly registered client gets startTime as default block.timestamp");
     });
   });
 
-   
-  it("should not allow other account to register a donation", function() {
-    
-     dgp.registerDonation(initDonation, {from: nonadmin})
+  it("should not change account balance after registering client", function() {
+     return dgp.accountBalance().then(b=>assert.equal(b.valueOf(), initDonation, "account balance = init donation"));
+  });
+  it("should update allocated after registering client", function() {
+     return dgp.allocated().then(a=>assert.equal(a.valueOf(), clientEndowment, "account balance = init donation"));
+  });
+  it("should set vested to 0 after registering client", function() {
+     return dgp.getVested(clientAddr).then(a=>assert.equal(a.valueOf(), 0, "vested = 0"));
+  });
+  it("should allow admin to register a second client", function() {
+
+    return dgp.registerClient(clientAddr2, clientEndowment, 0)
+    .then(r=> {
+      logGas('register client',r);
+      return dgp.clients.call(clientAddr2);
+    })
+    .then( c=> {
+      var c2 = new Client(c);
+      assert.equal(c2.endowmentTotal, clientEndowment, "newly registered client receives endowment");
+      assert.equal(c2.startTime, web3.eth.getBlock(web3.eth.blockNumber).timestamp, "newly registered client gets startTime as default block.timestamp");
+    });
+  });
+
+  it("should not allow a client to be registered twice", function() {
+     return dgp.registerClient(clientAddr, clientEndowment, 0)
      .then(assert.fail)
-     .catch(function(error) {
-                assert(
-                    
-                    error.message.indexOf('invalid opcode') >= 0,
-                    "Non admin accounts can''t register a donation"
-                );
-     });
+     .catch(e=> assert(e.message.indexOf('invalid opcode') >= 0, "Client can be registered 2x!"));
   });
-   
-    it("should allow admin to register a client", function() {
-      //web3.eth.getBlockNumber.call().then(b => console.log("BLOCK: " + b));
-      console.log(web3.eth.blockNumber);
-      console.log(web3.eth.getBlock(web3.eth.blockNumber).timestamp);
-      increaseDays(7);
-      dgp.registerClient(client, clientEndowment, clientStartBlock).then(function(){
-        return dgp.accountBalance.call();
-      })
-      .then(function(balance) {
-        assert.equal(balance.valueOf(), initDonation, "registering client should not change account balance");
-      })
-      .then(function(){
-        return dgp.allocated.call();
-      })
-      .then(function(allocated){
-        assert.equal(allocated.valueOf(), clientEndowment, "registering client should not change account balance");
-      })
-      .then(function(){
-        return dgp.clients.call(client);
-      })
-      .then(function(c){
-        cObj = new Client(c);
-      assert.equal(cObj.endowmentTotal, clientEndowment, "newly registered client receives endowment")
-      })
-      .then(function(){
+
+  it("should set vested to $70 after 1 redepemption period passed", function() {
+    increaseDays(8);
+    mineBlock();
+    //console.log(web3.eth.getBlock(web3.eth.blockNumber).timestamp);
+    return dgp.getVested(clientAddr).then(a=>assert.equal(a.valueOf(), 7000, "vested = $70"));
+  });
+
+  it("should allow client to make purchase", function() {
+    return dgp.makePurchase(vendorAddr, purchaseAmt, {from: clientAddr})
+    .then(r=> {
+      logGas('make purchase',r);
+      return dgp.clients.call(clientAddr);
+    })
+    .then( c=> {
+      client = new Client(c);
+      assert.equal(client.checkingBalance, 7000 - purchaseAmt, "checking balance reduced by purchase");
+      assert.equal(client.depositedEndowments, 7000, "1 endowment deposited");
+      console.log('checking: ' + client.checkingBalance);
+    });
+  });
+  it("should reduce vested after purchase", function() {
+    return dgp.getVested(clientAddr).then(a=>assert.equal(a.valueOf(), 0, "vested = $0"));
+  });
+  
+  it("should allow client to make a second purchase", function() {
+    return dgp.makePurchase(vendorAddr, purchaseAmt+1000, {from: clientAddr})
+    .then(r=> {
+      logGas('make 2nd purchase',r);
+      return dgp.clients.call(clientAddr);
+    })
+    .then( c=> {
+      client = new Client(c);
+      console.log('checking: ' + client.checkingBalance);
+      assert.equal(client.checkingBalance, 5000, "checking balance reduced by purchase");
+      assert.equal(client.depositedEndowments, 7000, "1 endowment deposited");
+    });
+  });
+  it("should set vendor balance after purchase", function() {
+    return dgp.vendorBalances(vendorAddr).then( 
+      a=> { 
+        assert.equal(a.valueOf(), 2000, "total sales = $20");
+    });
+  });
+  it("should allow client to make a third purchase", function() {
+    return dgp.makePurchase(vendorAddr, purchaseAmt+1000, {from: clientAddr})
+    .then(r=> {
+      logGas('make 3rd purchase',r);
+      return dgp.clients.call(clientAddr);
+    })
+    .then( c=> {
+      client = new Client(c);
+      console.log('checking: ' + client.checkingBalance);
+      assert.equal(client.checkingBalance, 3500, "checking balance reduced by purchase");
+    });
+  });
+
+  it("should allow vendor to request redemption", function() {
+    return dgp.redeemPurchases({from: vendorAddr})
+    .then(r=> {
+      logGas('redeem purchases',r);
+      return dgp.vendorBalances(vendorAddr)
+    })
+    .then( a=> { 
+        assert.equal(a.valueOf(), 0, "total sales = $0 after redemption");
         
-        console.log(web3.eth.getBlock(web3.eth.blockNumber).timestamp);
-
-
-      })
+    });
   });
-
+  
+  it("should log gas", function(){
+    console.log(gasList);
+  });
   
 });

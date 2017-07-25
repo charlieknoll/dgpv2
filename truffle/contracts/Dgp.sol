@@ -4,7 +4,7 @@ pragma solidity ^0.4.11;
 contract Dgp {
 
     struct Client {
-        uint256 startBlock;
+        uint256 startTime;
         uint256 lastRedemptionBlock;
         uint256 checkingBalance;
         uint256 depositedEndowments;
@@ -18,7 +18,7 @@ contract Dgp {
     
     mapping (address => uint256) public vendorBalances;
     mapping (address => Client) public clients;
-	mapping (uint256 => uint256) blockTimes;
+
 
     // events
     event Donation(uint256 _value);
@@ -35,7 +35,7 @@ contract Dgp {
 		_; 
 	}
 	modifier onlyClient { 
-		if (clients[msg.sender].startBlock == 0)  throw;
+		if (clients[msg.sender].startTime == 0)  throw;
 		_; 
 	}
 	modifier onlyVendorWithBalance { 
@@ -53,33 +53,37 @@ contract Dgp {
         Donation(_donationAmt);
     }
     
-    function registerClient(address _clientAddress, uint256 _endowmentTotal, uint256 _startBlock) onlyAdmin() {
+    function registerClient(address _clientAddress, uint256 _endowmentTotal, uint256 _startTime) onlyAdmin() {
         //never allocate more than account balance
+        if (_endowmentTotal <= 0) throw;
         if (_endowmentTotal + allocated > accountBalance) throw;
+        if (clients[_clientAddress].endowmentTotal > 0) throw;
         //TODO use safeAdd?
         allocated += _endowmentTotal;
         clients[_clientAddress].checkingBalance = 0;  
         clients[_clientAddress].endowmentTotal = _endowmentTotal;  
-        clients[_clientAddress].startBlock = _startBlock;  
+        clients[_clientAddress].startTime = _startTime == 0 ? now : _startTime;  
         clients[_clientAddress].lastRedemptionBlock = 0;  
-        //TODO set blocktime for _startBlock
         if (_endowmentTotal > 0) Endowment(_clientAddress, _endowmentTotal);
         
     }
     //Used by admin to give immediately vested DUST to client
     function depositChecking(address _clientAddress, uint256 _amount) onlyAdmin() external {
+        if (clients[_clientAddress].endowmentTotal == 0) throw;
         if (allocated + _amount > accountBalance) throw;
         allocated += _amount;
         clients[_clientAddress].checkingBalance += _amount;
         CheckingDeposit(_clientAddress, _amount);
     }
     function endow(address _clientAddress, uint256 _amount) onlyAdmin() external {
+        if (clients[_clientAddress].endowmentTotal == 0) throw;
         if (allocated + _amount > accountBalance) throw;
         allocated += _amount;
         clients[_clientAddress].endowmentTotal += _amount;
         Endowment(_clientAddress, _amount);
     }
     function removeClient(address _clientAddress) onlyAdmin() external {
+        if (clients[_clientAddress].endowmentTotal == 0) throw;
         uint256 clientFunds = clients[_clientAddress].checkingBalance +
          clients[_clientAddress].endowmentTotal - clients[_clientAddress].depositedEndowments;
          
@@ -89,28 +93,25 @@ contract Dgp {
         delete clients[_clientAddress];
     }
     function getVested(address _clientAddress) constant returns(uint256 vested) {
-        //wait 60 blocks since last endowment transfer for security (900 second miner fudge factor)
-        if (block.number - clients[_clientAddress].lastRedemptionBlock < 60) return 0;
-        uint256 startTime = blockTimes[clients[_clientAddress].startBlock];
-        if (startTime == 0) return 0;
-        uint256 endowmentDuration = (block.timestamp - startTime) / 1 days;
-        uint256 earnedEndowments = endowmentDuration / redemptionFrequency;
-        return earnedEndowments - clients[_clientAddress].depositedEndowments;
-
-        //int256 activeDays = clients[_clientAddress].startBlock - msg.blockNumber
-        
+        if (clients[_clientAddress].endowmentTotal == 0) throw;
+        uint256 endowmentDuration = (now - clients[_clientAddress].startTime);
+        uint256 earnedEndowments = endowmentDuration / (redemptionFrequency * 1 days);
+        return (earnedEndowments * redemptionAmt - clients[_clientAddress].depositedEndowments);
     }
     function getCheckingBalance(address _clientAddress) constant external returns(uint256 checkingBalance) {
+        if (clients[_clientAddress].endowmentTotal == 0) throw;
         checkingBalance = getVested(_clientAddress) + clients[_clientAddress].checkingBalance;
     }
 
     //Returns a virtual savings account balance, i.e. that which has been endowed but that can't be spent, maybe call it TrustBalance?
     function getSavingsBalance(address _clientAddress) constant external returns(uint256 savingsBalance) {
+        if (clients[_clientAddress].endowmentTotal == 0) throw;
         savingsBalance = clients[_clientAddress].endowmentTotal -
         getVested(_clientAddress) - clients[_clientAddress].depositedEndowments;
     }
 
     function makePurchase(address _vendorAddress, uint256 amount) onlyClient() external  {
+        //TODO validate vendor, is it necessary?
         uint256 vested = getVested(msg.sender);
         if (vested + clients[msg.sender].checkingBalance < amount) throw;
         clients[msg.sender].depositedEndowments += vested;
