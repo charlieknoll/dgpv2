@@ -31,15 +31,15 @@ contract Dgp {
     
     //access control
 	modifier onlyAdmin { 
-		if (msg.sender != admin)  throw;
+		if (msg.sender != admin)  revert();
 		_; 
 	}
 	modifier onlyClient { 
-		if (clients[msg.sender].startTime == 0)  throw;
+		if (clients[msg.sender].startTime == 0)  revert();
 		_; 
 	}
 	modifier onlyVendorWithBalance { 
-		if (vendorBalances[msg.sender] == 0)  throw;
+		if (vendorBalances[msg.sender] == 0)  revert();
 		_; 
 	}
 
@@ -55,9 +55,9 @@ contract Dgp {
     
     function registerClient(address _clientAddress, uint256 _endowmentTotal, uint256 _startTime) onlyAdmin() {
         //never allocate more than account balance
-        if (_endowmentTotal <= 0) throw;
-        if (_endowmentTotal + allocated > accountBalance) throw;
-        if (clients[_clientAddress].endowmentTotal > 0) throw;
+        if (_endowmentTotal <= 0) revert();
+        if (_endowmentTotal + allocated > accountBalance) revert();
+        if (clients[_clientAddress].endowmentTotal > 0) revert();
         //TODO use safeAdd?
         allocated += _endowmentTotal;
         clients[_clientAddress].checkingBalance = 0;  
@@ -69,21 +69,21 @@ contract Dgp {
     }
     //Used by admin to give immediately vested DUST to client
     function depositChecking(address _clientAddress, uint256 _amount) onlyAdmin() external {
-        if (clients[_clientAddress].endowmentTotal == 0) throw;
-        if (allocated + _amount > accountBalance) throw;
+        if (clients[_clientAddress].endowmentTotal == 0) revert();
+        if (allocated + _amount > accountBalance) revert();
         allocated += _amount;
         clients[_clientAddress].checkingBalance += _amount;
         CheckingDeposit(_clientAddress, _amount);
     }
     function endow(address _clientAddress, uint256 _amount) onlyAdmin() external {
-        if (clients[_clientAddress].endowmentTotal == 0) throw;
-        if (allocated + _amount > accountBalance) throw;
+        if (clients[_clientAddress].endowmentTotal == 0) revert();
+        if (allocated + _amount > accountBalance) revert();
         allocated += _amount;
         clients[_clientAddress].endowmentTotal += _amount;
         Endowment(_clientAddress, _amount);
     }
     function removeClient(address _clientAddress) onlyAdmin() external {
-        if (clients[_clientAddress].endowmentTotal == 0) throw;
+        if (clients[_clientAddress].endowmentTotal == 0) revert();
         uint256 clientFunds = clients[_clientAddress].checkingBalance +
          clients[_clientAddress].endowmentTotal - clients[_clientAddress].depositedEndowments;
          
@@ -93,19 +93,19 @@ contract Dgp {
         delete clients[_clientAddress];
     }
     function getVested(address _clientAddress) constant returns(uint256 vested) {
-        if (clients[_clientAddress].endowmentTotal == 0) throw;
+        if (clients[_clientAddress].endowmentTotal == 0) revert();
         uint256 endowmentDuration = (now - clients[_clientAddress].startTime);
         uint256 earnedEndowments = endowmentDuration / (redemptionFrequency * 1 days);
         return (earnedEndowments * redemptionAmt - clients[_clientAddress].depositedEndowments);
     }
     function getCheckingBalance(address _clientAddress) constant external returns(uint256 checkingBalance) {
-        if (clients[_clientAddress].endowmentTotal == 0) throw;
+        if (clients[_clientAddress].endowmentTotal == 0) revert();
         checkingBalance = getVested(_clientAddress) + clients[_clientAddress].checkingBalance;
     }
 
     //Returns a virtual savings account balance, i.e. that which has been endowed but that can't be spent, maybe call it TrustBalance?
     function getSavingsBalance(address _clientAddress) constant external returns(uint256 savingsBalance) {
-        if (clients[_clientAddress].endowmentTotal == 0) throw;
+        if (clients[_clientAddress].endowmentTotal == 0) revert();
         savingsBalance = clients[_clientAddress].endowmentTotal -
         getVested(_clientAddress) - clients[_clientAddress].depositedEndowments;
     }
@@ -113,14 +113,14 @@ contract Dgp {
     function makePurchase(address _vendorAddress, uint256 amount) onlyClient() external  {
         //TODO validate vendor, is it necessary?
         uint256 vested = getVested(msg.sender);
-        if (vested + clients[msg.sender].checkingBalance < amount) throw;
+        if (vested + clients[msg.sender].checkingBalance < amount) revert();
         clients[msg.sender].depositedEndowments += vested;
         clients[msg.sender].checkingBalance += vested-amount;
         vendorBalances[_vendorAddress] += amount;
         Purchase(msg.sender, _vendorAddress, amount);
     }
     function refundClient(address _clientAddress, uint256 amount) onlyVendorWithBalance() external {
-        if (vendorBalances[msg.sender] < amount) throw;
+        if (vendorBalances[msg.sender] < amount) revert();
         clients[_clientAddress].checkingBalance += amount;
         Refund(msg.sender,_clientAddress,amount);
     }
@@ -128,7 +128,7 @@ contract Dgp {
     function makePurchaseForClient(address _vendorAddress, address _clientAddress, uint256 amount)
        onlyAdmin() external {
         uint256 vested = getVested(_clientAddress);
-        if (vested + clients[_clientAddress].checkingBalance < amount) throw;
+        if (vested + clients[_clientAddress].checkingBalance < amount) revert();
         clients[_clientAddress].depositedEndowments += vested;
         clients[_clientAddress].checkingBalance += vested-amount;
         vendorBalances[_vendorAddress] += amount;
