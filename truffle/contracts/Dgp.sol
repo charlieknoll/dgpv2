@@ -18,6 +18,7 @@ contract Dgp {
     
     mapping (address => uint256) public vendorBalances;
     mapping (address => Client) public clients;
+    uint256 public clientCount;
 
 
     // events
@@ -64,9 +65,12 @@ contract Dgp {
         clients[_clientAddress].endowmentTotal = _endowmentTotal;  
         clients[_clientAddress].startTime = _startTime == 0 ? now : _startTime;  
         clients[_clientAddress].lastRedemptionBlock = 0;  
+        clientCount += 1;
         if (_endowmentTotal > 0) Endowment(_clientAddress, _endowmentTotal);
         
     }
+
+
     //Used by admin to give immediately vested DUST to client
     function depositChecking(address _clientAddress, uint256 _amount) onlyAdmin() external {
         if (clients[_clientAddress].endowmentTotal == 0) revert();
@@ -88,7 +92,7 @@ contract Dgp {
          clients[_clientAddress].endowmentTotal - clients[_clientAddress].depositedEndowments;
          
         allocated -= clientFunds;
-         
+        clientCount -= 1; 
         RemoveClient(_clientAddress, clientFunds);
         delete clients[_clientAddress];
     }

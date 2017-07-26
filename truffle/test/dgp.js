@@ -71,6 +71,7 @@ contract('Dgp', function(accounts) {
   it("should not change account balance after registering client", function() {
      return dgp.accountBalance().then(b=>assert.equal(b.valueOf(), initDonation, "account balance = init donation"));
   });
+
   it("should update allocated after registering client", function() {
      return dgp.allocated().then(a=>assert.equal(a.valueOf(), clientEndowment, "account balance = init donation"));
   });
@@ -89,6 +90,11 @@ contract('Dgp', function(accounts) {
       assert.equal(c2.endowmentTotal, clientEndowment, "newly registered client receives endowment");
       assert.equal(c2.startTime, web3.eth.getBlock(web3.eth.blockNumber).timestamp, "newly registered client gets startTime as default block.timestamp");
     });
+  });
+
+  it("should have 2 registered clients", function() {
+     return dgp.clientCount().then(c=>assert.equal(c,2,"client count = 2"));
+     
   });
 
   it("should not allow a client to be registered twice", function() {
