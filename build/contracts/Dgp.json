@@ -1,0 +1,659 @@
+{
+  "contract_name": "Dgp",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "clientTopOffAmt",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_vendorAddress",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "makePurchase",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "redemptionFrequency",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_clientAddress",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "refundClient",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_clientAddress",
+          "type": "address"
+        }
+      ],
+      "name": "getSavingsBalance",
+      "outputs": [
+        {
+          "name": "savingsBalance",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "clients",
+      "outputs": [
+        {
+          "name": "startTime",
+          "type": "uint256"
+        },
+        {
+          "name": "lastRedemptionBlock",
+          "type": "uint256"
+        },
+        {
+          "name": "checkingBalance",
+          "type": "uint256"
+        },
+        {
+          "name": "depositedEndowments",
+          "type": "uint256"
+        },
+        {
+          "name": "endowmentTotal",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "supporters",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_clientAddress",
+          "type": "address"
+        }
+      ],
+      "name": "getCheckingBalance",
+      "outputs": [
+        {
+          "name": "checkingBalance",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_donationAmt",
+          "type": "uint256"
+        }
+      ],
+      "name": "registerDonation",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_clientAddress",
+          "type": "address"
+        }
+      ],
+      "name": "removeClient",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_vendorAddress",
+          "type": "address"
+        }
+      ],
+      "name": "redeemPurchasesForVendor",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_clientAddress",
+          "type": "address"
+        },
+        {
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "depositChecking",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "vendorBalances",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "redemptionAmt",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "accountBalance",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_clientAddress",
+          "type": "address"
+        },
+        {
+          "name": "_endowmentTotal",
+          "type": "uint256"
+        },
+        {
+          "name": "_startTime",
+          "type": "uint256"
+        }
+      ],
+      "name": "registerClient",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "allocated",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_vendorAddress",
+          "type": "address"
+        },
+        {
+          "name": "_clientAddress",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "makePurchaseForClient",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "clientTopOffLevel",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_clientAddress",
+          "type": "address"
+        }
+      ],
+      "name": "getVested",
+      "outputs": [
+        {
+          "name": "vested",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "redeemPurchases",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "clientCount",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_clientAddress",
+          "type": "address"
+        },
+        {
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "endow",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "admin",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "payable": true,
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Donation",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "CheckingDeposit",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Endowment",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_removed",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "RemoveClient",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_client",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "_vendor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Purchase",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_vendor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_client",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Refund",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_vendor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Redemption",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x60606040526608e1bc9bf04000600355662386f26fc10000600455341561002557600080fd5b5b60008054600160a060020a03191633600160a060020a03161790555b5b610eb7806100526000396000f300606060405236156101225763ffffffff60e060020a6000350416630decead581146101525780631a7015d41461017757806339c8aae81461019b578063411c91e8146101c05780635e4a1d36146101e457806361eed2a914610215578063647c75e214610266578063715851a01461029757806372f4fdbf146102c85780639089f616146102e0578063928171841461030157806399eb925d14610322578063a76f756114610346578063aab1df0114610377578063b0a1c1c41461039c578063b1143269146103c1578063b304b2e1146103e8578063c740cd501461040d578063d4c2c15014610437578063dec8f52e1461045c578063e118fba21461048d578063e541c71e146104a2578063ef3bec3d146104c7578063f851a440146104eb575b6101505b34151561013257600080fd5b600160a060020a03331660009081526007602052604090203490555b565b005b341561015d57600080fd5b61016561051a565b60405190815260200160405180910390f35b341561018257600080fd5b610150600160a060020a0360043516602435610520565b005b34156101a657600080fd5b6101656105ea565b60405190815260200160405180910390f35b34156101cb57600080fd5b610150600160a060020a03600435166024356105ef565b005b34156101ef57600080fd5b610165600160a060020a03600435166106ad565b60405190815260200160405180910390f35b341561022057600080fd5b610234600160a060020a036004351661071f565b604051808681526020018581526020018481526020018381526020018281526020019550505050505060405180910390f35b341561027157600080fd5b610165600160a060020a036004351661074e565b60405190815260200160405180910390f35b34156102a257600080fd5b610165600160a060020a0360043516610760565b60405190815260200160405180910390f35b34156102d357600080fd5b6101506004356107b5565b005b34156102eb57600080fd5b610150600160a060020a0360043516610810565b005b341561030c57600080fd5b610150600160a060020a0360043516610906565b005b341561032d57600080fd5b610150600160a060020a036004351660243561097d565b005b341561035157600080fd5b610165600160a060020a0360043516610a37565b60405190815260200160405180910390f35b341561038257600080fd5b610165610a49565b60405190815260200160405180910390f35b34156103a757600080fd5b610165610a4f565b60405190815260200160405180910390f35b34156103cc57600080fd5b610150600160a060020a0360043516602435604435610a55565b005b34156103f357600080fd5b610165610b5e565b60405190815260200160405180910390f35b341561041857600080fd5b610150600160a060020a0360043581169060243516604435610b64565b005b341561044257600080fd5b610165610c27565b60405190815260200160405180910390f35b341561046757600080fd5b610165600160a060020a0360043516610c2d565b60405190815260200160405180910390f35b341561049857600080fd5b610150610cae565b005b34156104ad57600080fd5b610165610d2c565b60405190815260200160405180910390f35b34156104d257600080fd5b610150600160a060020a0360043516602435610d32565b005b34156104f657600080fd5b6104fe610dd9565b604051600160a060020a03909116815260200160405180910390f35b60045481565b600160a060020a033316600090815260066020526040812054151561054457600080fd5b61054d33610c2d565b600160a060020a03331660009081526006602052604090206002015490915081018290101561057b57600080fd5b600160a060020a03338116600081815260066020908152604080832060038101805488019055600201805488880301905593871680835260059091529083902080548601905591600080516020610e6c8339815191529085905190815260200160405180910390a35b5b505050565b600781565b600160a060020a033316600090815260056020526040902054151561061357600080fd5b600160a060020a0333166000908152600560205260409020548190101561063957600080fd5b600160a060020a038083166000908152600660205260409081902060020180548401905533909116907ff40cc8c1a1d17359049ba500cfc894596a692cffc9d03943cd92ec2e159cf6ae908490849051600160a060020a03909216825260208201526040908101905180910390a25b5b5050565b600160a060020a03811660009081526006602052604081206004015415156106d457600080fd5b600160a060020a0382166000908152600660205260409020600301546106f983610c2d565b600160a060020a038416600090815260066020526040902060040154030390505b919050565b600660205260009081526040902080546001820154600283015460038401546004909401549293919290919085565b60076020526000908152604090205481565b600160a060020a038116600090815260066020526040812060040154151561078757600080fd5b600160a060020a0382166000908152600660205260409020600201546107ac83610c2d565b0190505b919050565b60005433600160a060020a039081169116146107d057600080fd5b60018054820190557f4ad6d3cd6f9acbf734536f9812be14aded33cc8c4ae2cfbf3ff9a0a4acb337488160405190815260200160405180910390a15b5b50565b6000805433600160a060020a0390811691161461082c57600080fd5b600160a060020a038216600090815260066020526040902060040154151561085357600080fd5b50600160a060020a03811660008181526006602052604090819020600381015460048201546002928301548354910191909103908190039091556008805460001901905591907f1af8aed7817903c32014f4e178a0a43fa985bdcbfd9255069bb27cfd097406b69083905190815260200160405180910390a2600160a060020a0382166000908152600660205260408120818155600181018290556002810182905560038101829055600401555b5b5050565b6000805433600160a060020a0390811691161461092257600080fd5b50600160a060020a0381166000818152600560205260408082208054929055600180548390039055600280548390039055909190600080516020610e2c8339815191529083905190815260200160405180910390a25b5b5050565b60005433600160a060020a0390811691161461099857600080fd5b600160a060020a03821660009081526006602052604090206004015415156109bf57600080fd5b600154816002540111156109d257600080fd5b6002805482018155600160a060020a03831660008181526006602052604090819020909201805484019055907f460e6187c811397844950a074cd5c0eee99a665e28e3e390d1d1cd6e8834e04b9083905190815260200160405180910390a25b5b5050565b60056020526000908152604090205481565b611b5881565b60015481565b60005433600160a060020a03908116911614610a7057600080fd5b60008211610a7d57600080fd5b60015460025483011115610a9057600080fd5b600160a060020a0383166000908152600660205260408120600401541115610ab757600080fd5b6002805483018155600160a060020a0384166000908152600660205260408120918201556004018290558015610aed5780610aef565b425b600160a060020a0384166000908152600660205260408120918255600191820155600880549091019055610b2283610de8565b60008211156105e45782600160a060020a0316600080516020610e4c8339815191528360405190815260200160405180910390a25b5b5b505050565b60025481565b6000805433600160a060020a03908116911614610b8057600080fd5b610b8983610c2d565b600160a060020a038416600090815260066020526040902060020154909150810182901015610bb757600080fd5b600160a060020a03808416600081815260066020908152604080832060038101805488019055600201805488880301905593881680835260059091529083902080548601905591600080516020610e6c8339815191529085905190815260200160405180910390a35b5b50505050565b60035481565b600160a060020a038116600090815260066020526040812060040154819081901515610c5857600080fd5b600160a060020a0384166000908152600660205260409020544203915062093a80825b600160a060020a038616600090815260066020526040902060030154611b589290910491820203935090505b5050919050565b600160a060020a0333166000908152600560205260408120541515610cd257600080fd5b50600160a060020a0333166000818152600560205260408082208054929055600180548390039055600280548390039055909190600080516020610e2c8339815191529083905190815260200160405180910390a25b5b50565b60085481565b60005433600160a060020a03908116911614610d4d57600080fd5b600160a060020a0382166000908152600660205260409020600401541515610d7457600080fd5b60015481600254011115610d8757600080fd5b6002805482019055600160a060020a03821660008181526006602052604090819020600401805484019055600080516020610e4c8339815191529083905190815260200160405180910390a25b5b5050565b600054600160a060020a031681565b60035481600160a060020a031631101561080c5780600160a060020a03166108fc6004549081150290604051600060405180830381858888f150505050505b5b505600e6c82503aaaa3db78b70f183901ae8668918f895b3982b2c851cf2ffe0c6c6391cce2e096ae6876594b2571ec18879ef89e1870b70d1498176e1e1ac55c1903622e3ae3a20c49dce14046235895c7a3ffc0a6a5f3577c370177ad45fa619485da165627a7a723058203913ddbf2ea178e81ec60151a18af59ed9e585c25ee1e1308ac4919ee5552b360029",
+  "networks": {
+    "1501629123648": {
+      "events": {
+        "0x4ad6d3cd6f9acbf734536f9812be14aded33cc8c4ae2cfbf3ff9a0a4acb33748": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Donation",
+          "type": "event"
+        },
+        "0x460e6187c811397844950a074cd5c0eee99a665e28e3e390d1d1cd6e8834e04b": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            }
+          ],
+          "name": "CheckingDeposit",
+          "type": "event"
+        },
+        "0x1cce2e096ae6876594b2571ec18879ef89e1870b70d1498176e1e1ac55c19036": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Endowment",
+          "type": "event"
+        },
+        "0x1af8aed7817903c32014f4e178a0a43fa985bdcbfd9255069bb27cfd097406b6": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_removed",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            }
+          ],
+          "name": "RemoveClient",
+          "type": "event"
+        },
+        "0x22e3ae3a20c49dce14046235895c7a3ffc0a6a5f3577c370177ad45fa619485d": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_client",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "_vendor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Purchase",
+          "type": "event"
+        },
+        "0xf40cc8c1a1d17359049ba500cfc894596a692cffc9d03943cd92ec2e159cf6ae": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_vendor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_client",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Refund",
+          "type": "event"
+        },
+        "0xe6c82503aaaa3db78b70f183901ae8668918f895b3982b2c851cf2ffe0c6c639": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_vendor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Redemption",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x5f5e03a45546f7e2708655b6c7bc1717c51d57ea",
+      "updated_at": 1501629483724
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1501629483724
+}

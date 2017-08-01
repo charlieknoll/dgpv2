@@ -9,8 +9,8 @@
             "request": "launch",
             "protocol": "legacy",
             "name": "Launch Program",
-            "program": "${workspaceRoot}\\truffle\\test\\gastest.js",
-            "cwd": "${workspaceRoot}\\truffle",
+            "program": "${workspaceRoot}\\test\\gastest.js",
+            "cwd": "${workspaceRoot}",
             "runtimeExecutable": "truffle",
             "runtimeArgs": ["test"]
         },
@@ -18,8 +18,8 @@
             "type": "node",
             "request": "launch",
             "name": "Run with node",
-            "program": "${workspaceRoot}\\truffle\\test\\makePurchaseNew.js",
-            "cwd": "${workspaceRoot}\\truffle"
+            "program": "${workspaceRoot}\\test\\gastest.js",
+            "cwd": "${workspaceRoot}"
         }
     ]
 }

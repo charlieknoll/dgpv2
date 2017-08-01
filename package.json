@@ -1,0 +1,26 @@
+{
+  "name": "dgpv2",
+  "version": "1.0.0",
+  "description": "pure node tests for dgpv2",
+  "main": "burnBalance-node.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/charlieknoll/dgpv2.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/charlieknoll/dgpv2/issues"
+  },
+  "homepage": "https://github.com/charlieknoll/dgpv2#readme",
+  "devDependencies": {
+    "bignumber.js": "^4.0.2",
+    "web3": "^1.0.0-beta.13"
+  }
+}
