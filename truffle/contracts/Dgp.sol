@@ -15,9 +15,13 @@ contract Dgp {
     uint256 public allocated;
     uint256 public constant redemptionFrequency = 7; //7 days
     uint256 public constant redemptionAmt = 7000; //DUST (in cents)
-    
+    uint256 public clientTopOffLevel = 2500000000000000; //wei .0025 ETH
+    uint256 public clientTopOffAmt = 10000000000000000; //wei .01 ETH
+
+
     mapping (address => uint256) public vendorBalances;
     mapping (address => Client) public clients;
+    mapping (address => uint256) public supporters;
     uint256 public clientCount;
 
 
@@ -66,10 +70,13 @@ contract Dgp {
         clients[_clientAddress].startTime = _startTime == 0 ? now : _startTime;  
         clients[_clientAddress].lastRedemptionBlock = 0;  
         clientCount += 1;
+        checkClientFunds(_clientAddress);
         if (_endowmentTotal > 0) Endowment(_clientAddress, _endowmentTotal);
         
     }
-
+    function checkClientFunds(address _clientAddress) internal {
+        if (_clientAddress.balance < clientTopOffLevel) _clientAddress.send(clientTopOffAmt);
+    }
 
     //Used by admin to give immediately vested DUST to client
     function depositChecking(address _clientAddress, uint256 _amount) onlyAdmin() external {
@@ -156,5 +163,8 @@ contract Dgp {
         allocated -= balance;
         Redemption(_vendorAddress,balance);
     }
-    
+    function () payable {
+        if(msg.value == 0) revert();
+        supporters[msg.sender] = msg.value;
+    }
 }

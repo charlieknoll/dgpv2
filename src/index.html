@@ -1,0 +1,43 @@
+<!DOCTYPE>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <button onclick="tests.test()">Run Test</button>
+        <p id='console'>
+
+        </p>
+        <script src="js/vendor/jquery-1.12.0.min.js">         
+        </script>
+        <script>
+           var tests = {};
+           tests.cb = function cb(error, result) {
+                if(!error)
+                    console.log(result)
+                else
+                    console.error(error);
+           };
+           tests.test = function test() {
+             console.log("Getting block number...");
+             web3.eth.getBlockNumber(tests.cb);  
+             console.log('Building topics...');
+             var topics = [web3.sha3('Transfer(bytes32,address)')];
+             topics = ['0xb556ff269c1b6714f432c36431e2041d28436a73b6c3f19c021827bbdc6bfc29'];
+             console.log("Building filter...");
+
+             var filter = web3.eth.filter({fromBlock:3869200,toBlock:'latest',address: '0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef', topics: topics});
+             console.log("Getting ENS transfers...");
+             filter.get(tests.cb);
+
+
+
+           };
+
+        </script>
+    </body>
+</html>

@@ -1,5 +1,7 @@
 var Dgp = artifacts.require("./Dgp.sol");
 var gasList = [];
+//var Web3 = require("web3");
+//var BN = require("bignumber.js");
 
 function Client(c) {
    var result = {};
@@ -13,6 +15,32 @@ function Client(c) {
 function logGas(step,txResult) {
   gasList.push({ step: step, gas: txResult.receipt.gasUsed});
 }
+// function burnBalance(from, to){
+//   //TODO burn to a real address
+//   w3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+//  w3.eth.getBalance(from).then(b=>{
+//     balance = new BN(b);
+//     return w3.eth.getGasPrice();
+//   }).then(gP=>{
+//     gasPrice = new BN(gP);
+//     gasCost = gasPrice.times(21000);
+//     sendAmt = balance.minus(gasCost);
+//     console.log(balance.toString(10));
+//     console.log(sendAmt.toString(10));
+//     console.log(gasPrice.toString(10));
+//     console.log(gasCost.toString(10));
+//     return w3.eth.estimateGas({from: from, to: to, value: sendAmt, gasLimit: 21000, gasPrice: gasPrice })
+//   }).then(g=>{
+//     console.log(g);
+//     return w3.eth.sendTransaction({from: from, to: to, value: sendAmt, gasLimit: 21000, gasPrice: gasPrice })
+//   }).then(tx=>{
+//     console.log(tx);
+//     return w3.eth.getBalance(from);
+//   }).then(b=>{
+//     console.log(b);
+//   });
+
+// }
 const increaseTime = addSeconds => web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [addSeconds], id: 0});
 const increaseDays = addDays => web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [addDays*60*60*24], id: 0});
 const mineBlock = () => web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", params: [], id: 0});
@@ -26,17 +54,24 @@ contract('Dgp', function(accounts) {
   var clientAddr = accounts[2];
   var clientAddr2 = accounts[3];
 
+  //burnBalance(clientAddr, accounts[0]);
+
   var clientEndowment = 10000; //cents $100.00
   var purchaseAmt = 500; //$5.00
   
-
   var vendorAddr = accounts[4];
   
   Dgp.deployed().then(i => dgp = i);
   
-  it("should have 0 balance upon deployment", function() {
+
+  it("should have 0 DUST balance upon deployment", function() {
     return dgp.accountBalance().then(b => assert.equal(b.valueOf(), 0, "0 was the initial balance"));
   });
+  it("should have 9 ETH after admin funding", function() {
+    var tx = web3.eth.sendTransaction({from: accounts[0], to: dgp.address, value: web3.toWei(9, 'ether') });
+    var ethBalance = web3.eth.getBalance(dgp.address);
+    return  assert.equal(ethBalance, web3.toWei(9, 'ether'), "9 ETH funded");
+  });  
 
   it("should allow admin to register a donation", function() {
      return dgp.registerDonation(initDonation)
@@ -56,9 +91,12 @@ contract('Dgp', function(accounts) {
   var client;
 
   it("should allow admin to register a client", function() {
+    console.log(web3.fromWei(web3.eth.getBalance(clientAddr),'ether'));
+
     return dgp.registerClient(clientAddr, clientEndowment, 0)
     .then(r=> {
       logGas('register client',r);
+      console.log(web3.fromWei(web3.eth.getBalance(clientAddr),'ether'));
       return dgp.clients.call(clientAddr);
     })
     .then( c=> {
@@ -111,6 +149,7 @@ contract('Dgp', function(accounts) {
   });
 
   it("should allow client to make purchase", function() {
+    
     return dgp.makePurchase(vendorAddr, purchaseAmt, {from: clientAddr})
     .then(r=> {
       logGas('make purchase',r);
@@ -121,6 +160,7 @@ contract('Dgp', function(accounts) {
       assert.equal(client.checkingBalance, 7000 - purchaseAmt, "checking balance reduced by purchase");
       assert.equal(client.depositedEndowments, 7000, "1 endowment deposited");
       console.log('checking: ' + client.checkingBalance);
+      console.log(web3.fromWei(web3.eth.getBalance(clientAddr),'ether'));
     });
   });
   it("should reduce vested after purchase", function() {
