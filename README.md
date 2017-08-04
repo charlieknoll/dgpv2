@@ -1,6 +1,26 @@
 # Distribruted Giving Project Phase 2
 Application to enable management and verification of funds for a charitable organization using the Ethereum blockchain
 
+## High Level Testing Process Description
+
+The following use cases are tested in the tests/dgp.js file.
+
+- SuperAdmin deploys contract
+- SuperAdmin funds contract
+- Admin registers clients which prefunds the clients' wallets with ETH for gas costs and allocates USD (DUST) to the client
+- Admin registers vendors
+- Clients USD (DUST) vests over time
+- Clients make purchases from vendors
+- Vendors redeem USD
+
+## Edge test cases
+
+- Admin prevented from registering an existing client
+- Admin can redeem DUST for USD for vendors
+- Vendors can refund clients for mistaken purchases
+- Clients can't make purchase without enough vested DUST
+
+
 ## Glossary
 
 ### User types
