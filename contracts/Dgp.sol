@@ -10,73 +10,94 @@ contract Dgp {
         uint256 depositedEndowments;
         uint256 endowmentTotal;
     }    
+    struct Vendor {
+        uint8 registered;
+        uint256 balance;
+    }
+    address public superAdmin;
     address public admin;
     uint256 public accountBalance;
     uint256 public allocated;
     uint256 public constant redemptionFrequency = 7; //7 days
     uint256 public constant redemptionAmt = 7000; //DUST (in cents)
-    uint256 public clientTopOffLevel = 2500000000000000; //wei .0025 ETH
-    uint256 public clientTopOffAmt = 10000000000000000; //wei .01 ETH
+    //uint256 public minClientBalance =    3000000000000000; //wei .003 ETH use 2500000000000000 for testing due to truffle gas bug
+    // uint256 public clientGasAddAmt =  15000000000000000; //wei .015 ETH PRODUCTION
+    uint256 public minClientBalance =   97000000000000000; //wei .0970 ETH use 2500000000000000 for testing due to truffle gas bug
+    uint256 public clientGasAddAmt =    100000000000000000; //wei .1 ETH TESTING due to truffle gas bug, just enough for 2 tx's causing a top off before 3rd
 
-
-    mapping (address => uint256) public vendorBalances;
+    mapping (address => Vendor) public vendors;
     mapping (address => Client) public clients;
     mapping (address => uint256) public supporters;
-    uint256 public clientCount;
+
 
 
     // events
-    event Donation(uint256 _value);
-    event CheckingDeposit(address indexed _to, uint256 _value);
-    event Endowment(address indexed _to, uint256 _value);
+    event USDDonation(uint256 _value);
+    event UnlockedDeposit(address indexed _to, uint256 _value);
+    event LockedDeposit(address indexed _to, uint256 _value);
     event RemoveClient(address indexed _removed, uint256 _value);
     event Purchase(address indexed _client, address indexed _vendor, uint256 _value);
     event Refund(address indexed _vendor, address _client, uint256 _value);
     event Redemption(address indexed _vendor, uint256 _value);
+    event SupporterETHDonation(address indexed _supporter, uint256 _value);
+    event Transfer(address _recipient, uint256 _value);
     
     //access control
+    modifier onlySuperAdmin { 
+		if (msg.sender != superAdmin)  revert();
+		_; 
+	}    
 	modifier onlyAdmin { 
 		if (msg.sender != admin)  revert();
 		_; 
 	}
+
+    modifier onlySuperOrAdmin { 
+		if ((msg.sender != admin) && (msg.sender != superAdmin))  revert();
+		_; 
+	}
+
 	modifier onlyClient { 
 		if (clients[msg.sender].startTime == 0)  revert();
 		_; 
 	}
 	modifier onlyVendorWithBalance { 
-		if (vendorBalances[msg.sender] == 0)  revert();
+		if (vendors[msg.sender].balance == 0)  revert();
 		_; 
 	}
 
         // constructor
-    function Dgp() 
+    function Dgp(address _admin) 
     {
-      admin = msg.sender;
+      superAdmin = msg.sender;
+      admin = _admin;
     }
     function registerDonation(uint256 _donationAmt) onlyAdmin() {
         accountBalance += _donationAmt;
-        Donation(_donationAmt);
+        USDDonation(_donationAmt);
     }
     
-    function registerClient(address _clientAddress, uint256 _endowmentTotal, uint256 _startTime) onlyAdmin() {
+    function registerClient(address _clientAddress, uint256 _endowmentAmt, uint256 _startTime) onlyAdmin() {
         //never allocate more than account balance
-        if (_endowmentTotal <= 0) revert();
-        if (_endowmentTotal + allocated > accountBalance) revert();
+        if (_endowmentAmt <= 0) revert();
+        if (_endowmentAmt + allocated > accountBalance) revert();
         if (clients[_clientAddress].endowmentTotal > 0) revert();
         //TODO use safeAdd?
-        allocated += _endowmentTotal;
+        allocated += _endowmentAmt;
         clients[_clientAddress].checkingBalance = 0;  
-        clients[_clientAddress].endowmentTotal = _endowmentTotal;  
+        clients[_clientAddress].endowmentTotal = _endowmentAmt;  
         clients[_clientAddress].startTime = _startTime == 0 ? now : _startTime;  
         clients[_clientAddress].lastRedemptionBlock = 0;  
-        clientCount += 1;
         checkClientFunds(_clientAddress);
-        if (_endowmentTotal > 0) Endowment(_clientAddress, _endowmentTotal);
+        if (_endowmentAmt > 0) LockedDeposit(_clientAddress, _endowmentAmt);
         
     }
     function checkClientFunds(address _clientAddress) internal {
-        if (_clientAddress.balance < clientTopOffLevel) _clientAddress.send(clientTopOffAmt);
+        if (_clientAddress.balance < minClientBalance) _clientAddress.transfer(clientGasAddAmt);
     }
+    function registerVendor(address _vendorAddress) onlyAdmin() {
+        vendors[_vendorAddress].registered = 1;
+    } 
 
     //Used by admin to give immediately vested DUST to client
     function depositChecking(address _clientAddress, uint256 _amount) onlyAdmin() external {
@@ -84,14 +105,14 @@ contract Dgp {
         if (allocated + _amount > accountBalance) revert();
         allocated += _amount;
         clients[_clientAddress].checkingBalance += _amount;
-        CheckingDeposit(_clientAddress, _amount);
+        UnlockedDeposit(_clientAddress, _amount);
     }
-    function endow(address _clientAddress, uint256 _amount) onlyAdmin() external {
+    function depositSavings(address _clientAddress, uint256 _amount) onlyAdmin() external {
         if (clients[_clientAddress].endowmentTotal == 0) revert();
         if (allocated + _amount > accountBalance) revert();
         allocated += _amount;
         clients[_clientAddress].endowmentTotal += _amount;
-        Endowment(_clientAddress, _amount);
+        LockedDeposit(_clientAddress, _amount);
     }
     function removeClient(address _clientAddress) onlyAdmin() external {
         if (clients[_clientAddress].endowmentTotal == 0) revert();
@@ -99,7 +120,6 @@ contract Dgp {
          clients[_clientAddress].endowmentTotal - clients[_clientAddress].depositedEndowments;
          
         allocated -= clientFunds;
-        clientCount -= 1; 
         RemoveClient(_clientAddress, clientFunds);
         delete clients[_clientAddress];
     }
@@ -122,49 +142,52 @@ contract Dgp {
     }
 
     function makePurchase(address _vendorAddress, uint256 amount) onlyClient() external  {
-        //TODO validate vendor, is it necessary?
+        if (vendors[_vendorAddress].registered == 0) revert(); //vendor check
         uint256 vested = getVested(msg.sender);
         if (vested + clients[msg.sender].checkingBalance < amount) revert();
         clients[msg.sender].depositedEndowments += vested;
         clients[msg.sender].checkingBalance += vested-amount;
-        vendorBalances[_vendorAddress] += amount;
+        vendors[_vendorAddress].balance += amount;
+        checkClientFunds(msg.sender);
         Purchase(msg.sender, _vendorAddress, amount);
     }
     function refundClient(address _clientAddress, uint256 amount) onlyVendorWithBalance() external {
-        if (vendorBalances[msg.sender] < amount) revert();
+        if (clients[_clientAddress].endowmentTotal == 0) revert(); //client addr check
+        if (vendors[msg.sender].balance < amount) revert();
         clients[_clientAddress].checkingBalance += amount;
         Refund(msg.sender,_clientAddress,amount);
     }
 
     function makePurchaseForClient(address _vendorAddress, address _clientAddress, uint256 amount)
        onlyAdmin() external {
+        if (vendors[_vendorAddress].registered == 0) revert(); //vendor check
         uint256 vested = getVested(_clientAddress);
         if (vested + clients[_clientAddress].checkingBalance < amount) revert();
         clients[_clientAddress].depositedEndowments += vested;
         clients[_clientAddress].checkingBalance += vested-amount;
-        vendorBalances[_vendorAddress] += amount;
+        vendors[_vendorAddress].balance += amount;
         Purchase(_clientAddress, _vendorAddress, amount);
     }
     
     function redeemPurchases() onlyVendorWithBalance() external {
-        
-        uint256 balance = vendorBalances[msg.sender];
-        vendorBalances[msg.sender] = 0;
+        uint256 balance = vendors[msg.sender].balance;
+        vendors[msg.sender].balance = 0;
         accountBalance -= balance;
         allocated -= balance;
         Redemption(msg.sender,balance);
-        
     }
+
     function redeemPurchasesForVendor(address _vendorAddress) onlyAdmin() external {
-        
-        uint256 balance = vendorBalances[_vendorAddress];
-        vendorBalances[_vendorAddress] = 0;
+        if (vendors[_vendorAddress].registered == 0) revert(); //vendor check
+        uint256 balance = vendors[_vendorAddress].balance;
+        vendors[_vendorAddress].balance = 0;
         accountBalance -= balance;
         allocated -= balance;
         Redemption(_vendorAddress,balance);
     }
     function () payable {
         if(msg.value == 0) revert();
-        supporters[msg.sender] = msg.value;
+        supporters[msg.sender] += msg.value;
+        SupporterETHDonation(msg.sender,msg.value);
     }
 }

@@ -42,11 +42,11 @@ var burnBalance = function (from,to) {
 accounts
   .then(a=>
     {
-      return burnBalance(a[2],a[0]).then(b=>{return a;});
+      return burnBalance(a[3],a[0]).then(b=>{return a;});
       //return a;
     })
   .then(a=>
     {
-      burnBalance(a[3],a[0]); 
+      burnBalance(a[4],a[0]); 
       return a;
     });
