@@ -7,6 +7,7 @@ The following use cases are tested in the tests/dgp.js file.
 
 - SuperAdmin deploys contract
 - SuperAdmin funds contract
+- Admin registers USD donations to their operating bank account which effectively mints DUST
 - Admin registers clients which prefunds the clients' wallets with ETH for gas costs and allocates USD (DUST) to the client
 - Admin registers vendors
 - Clients USD (DUST) vests over time
@@ -18,8 +19,21 @@ The following use cases are tested in the tests/dgp.js file.
 - Admin prevented from registering an existing client
 - Admin can redeem DUST for USD for vendors
 - Vendors can refund clients for mistaken purchases
+- Vendors can donate DUST to be recycled into client endowments instead of withdrawaling USD
 - Clients can't make purchase without enough vested DUST
 
+## 3rd Party Auditing
+
+At any time a 3rd party can read the contracts "accountBalance" field and verify that it matches the Service Providers operating bank account balance.  Hopefully a future thinking bank will offer these services by surfacing a simple API, for example:
+
+https://api.wellsfargo.com/verifyBalance?contractAddress=0xfe39fae16d9ab71c3911b40ab2724b6fd7dfb2b8
+
+which would make a blockchain call and retrieve an "Account Verified" code snippet.  The would work similarly to 
+site verified badges on websites:
+
+![image](https://user-images.githubusercontent.com/1767009/28976039-91e52760-78f9-11e7-8ff6-0bf16655e417.png)
+
+This would encourage charitiable giving to the project based on the confidence that the USD funds cannot be misappropriated.
 
 ## Glossary
 
