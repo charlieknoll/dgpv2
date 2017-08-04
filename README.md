@@ -6,7 +6,7 @@ Application to enable management and verification of funds for a charitable orga
 The following use cases are tested in the tests/dgp.js file.
 
 - SuperAdmin deploys contract
-- SuperAdmin funds contract
+- SuperAdmin funds contract with ETH
 - Admin registers USD donations to their operating bank account which effectively mints DUST
 - Admin registers clients which prefunds the clients' wallets with ETH for gas costs and allocates USD (DUST) to the client
 - Admin registers vendors
