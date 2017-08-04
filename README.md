@@ -4,9 +4,9 @@ Application to enable management and verification of funds for a charitable orga
 ## Glossary
 
 ### User types
-- SuperAdmin: the contract deployer (DGP organization)
-- Admin: Either a service provider account or DGP, the user who sets up vendors and clients
-- Client: A receiver of USD tokens (DUST) called an endowment that can only be spent at registered vendors according to vesting rules
+- SuperAdmin: the contract deployer (DGP organization).
+- Admin: Either a service provider account or DGP, the user who sets up vendors and clients.
+- Client: A receiver of USD tokens (DUST). The client only spend DUST at registered vendors according to vesting rules.
 - Vendor: A registered participant who has agreed to recieve DUST from clients for payment of goods or services.  The Admin will send real USD to the vendor upon the Vendor's redemption of DUST
 - Supporter: Someone who wishes to donate ETH to the contract to pay for client & vendor expenses
 
