@@ -249,6 +249,41 @@ contract('Dgp', function(accounts) {
     });
   });
 
+  it("should allow admin to deposit unlocked DUST",function(){
+    return dgp.clients.call(clientAddr)
+    .then( c=> {
+      client = new Client(c);
+      return dgp.depositChecking(clientAddr,100,{from: adminAddr});
+    })
+    .then(r=>{
+      return dgp.clients.call(clientAddr);
+    })
+    .then(c=>{
+      var originalBalance = client.checkingBalance;
+      client = new Client(c);
+      assert.equal(originalBalance+100, client.checkingBalance, "checking balance increased");
+
+
+    });
+  });
+  it("should allow admin to deposit locked DUST",function(){
+    return dgp.clients.call(clientAddr)
+    .then( c=> {
+      client = new Client(c);
+      return dgp.depositSavings(clientAddr,100,{from: adminAddr});
+    })
+    .then(r=>{
+      return dgp.clients.call(clientAddr);
+    })
+    .then(c=>{
+      var originalBalance = client.endowmentTotal;
+      client = new Client(c);
+      assert.equal(originalBalance+100, client.endowmentTotal, "savings balance increased");
+
+
+    });
+  });  
+
   it("should allow vendor to request redemption", function() {
     return dgp.redeemPurchases({from: vendorAddr, gasPrice: gasPrice})
     .then(r=> {
@@ -269,6 +304,22 @@ contract('Dgp', function(accounts) {
     .then( v=> { 
         var vendor = new Vendor(v);
         assert.equal(vendor.balance, 0, "total sales = $0 after admin redemption");
+    });
+  });
+  
+  it("should allow superAdmin to tranfer contract ETH", function() {
+    return dgp.transferETH(adminAddr, web3.toWei(1,'ether'))
+    .then(r=>{
+      logGas('transfer ETH',r);
+    });
+
+  });
+
+  it("should allow superadmin to selfdestruct", function() {
+    return dgp.terminate()
+    .then(r=> {
+      logGas('self destruct',r);
+      
     });
   });
   it("should log gas", function(){

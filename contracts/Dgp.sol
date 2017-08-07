@@ -40,6 +40,7 @@ contract Dgp {
     event Refund(address indexed _vendor, address _client, uint256 _value);
     event Redemption(address indexed _vendor, uint256 _value);
     event SupporterETHDonation(address indexed _supporter, uint256 _value);
+    event RunningOutOfGas(address indexed _client);
     event Transfer(address _recipient, uint256 _value);
     
     //access control
@@ -93,7 +94,13 @@ contract Dgp {
         
     }
     function checkClientFunds(address _clientAddress) internal {
-        if (_clientAddress.balance < minClientBalance) _clientAddress.transfer(clientGasAddAmt);
+        if ((_clientAddress.balance < minClientBalance) && (this.balance > clientGasAddAmt)) {
+            _clientAddress.transfer(clientGasAddAmt);
+        } 
+        else
+        {
+          RunningOutOfGas(_clientAddress);
+        }
     }
     function registerVendor(address _vendorAddress) onlyAdmin() {
         vendors[_vendorAddress].registered = 1;
@@ -184,6 +191,14 @@ contract Dgp {
         accountBalance -= balance;
         allocated -= balance;
         Redemption(_vendorAddress,balance);
+    }
+    function transferETH(address _recipient, uint256 amount) onlySuperAdmin() external {
+       if (this.balance < amount) revert();
+       _recipient.transfer(amount);
+
+    }
+    function terminate() onlySuperAdmin external {
+        selfdestruct(superAdmin);
     }
     function () payable {
         if(msg.value == 0) revert();
