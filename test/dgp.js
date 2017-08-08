@@ -30,6 +30,12 @@ function logBalance(addr, msg) {
   if (suppressLogging) return;
   console.log(msg + ": " + web3.fromWei(web3.eth.getBalance(addr),'ether'));
 }
+function verifyEvent(logs,eventName,args) {
+   logs.forEach(function(log) {
+      assert.equal(log.event, eventName, 'Event not found');
+      console.log(log);
+   });
+}
 
 const increaseTime = addSeconds => web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [addSeconds], id: 0});
 const increaseDays = addDays => web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [addDays*60*60*24], id: 0});
@@ -103,6 +109,7 @@ contract('Dgp', function(accounts) {
      return dgp.registerDonation(initDonation,{from: adminAddr, gasPrice: gasPrice})
      .then(result => {
        logGas('register donation',result);
+       verifyEvent(result.logs,'USDDonation', [initDonation]);
        return dgp.accountBalance();
       })
      .then(b=> assert.equal(b.valueOf(), initDonation, "$1000 is the balance after initial donation"));
