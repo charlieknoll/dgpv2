@@ -3,7 +3,7 @@ var gasList = [];
 var gasPrice = 20000000000;
 var gasLimit = 120000;
 var skipThrows = true; //throws cost a lot of gas and are incorrectly consumed by truffle/testrpc, don't burn balance if this is set to false
-var suppressLogging = false;
+var suppressLogging = true;
 //var Web3 = require("web3");
 //var BN = require("bignumber.js");
 
@@ -33,7 +33,6 @@ function logBalance(addr, msg) {
 function verifyEvent(logs,eventName,args) {
    logs.forEach(function(log) {
       assert.equal(log.event, eventName, 'Event not found');
-      console.log(log);
    });
 }
 
@@ -88,21 +87,22 @@ contract('Dgp', function(accounts) {
   it("should have 9 ETH after admin funding", function() {
     var tx = web3.eth.sendTransaction({from: accounts[0], to: dgp.address, value: web3.toWei(initFundingAmt, 'ether') });
     var ethBalance = web3.eth.getBalance(dgp.address);
-    return  assert.equal(ethBalance, web3.toWei(initFundingAmt, 'ether'), "9 ETH funded");
+    assert.equal(ethBalance, web3.toWei(initFundingAmt, 'ether'), "9 ETH funded");
   });  
-  it("should allow supporter ETH donation",function() {
+
+  it("should allow supporter ETH donation", function() {
     var tx = web3.eth.sendTransaction({from: supporterAddr, to: dgp.address, value: web3.toWei(supporterDonationAmt, 'ether') });
     var ethBalance = web3.eth.getBalance(dgp.address);
-    return  assert.equal(ethBalance, web3.toWei(initFundingAmt + supporterDonationAmt, 'ether'), "9.1 ETH funded");
+    assert.equal(ethBalance, web3.toWei(initFundingAmt + supporterDonationAmt, 'ether'), "9.1 ETH funded");
   });
-  it("should track supporter 2nd ETH donation",function() {
+
+  it("should track supporter 2nd ETH donation",async function() {
     var tx = web3.eth.sendTransaction({from: supporterAddr, to: dgp.address, value: web3.toWei(supporterDonationAmt, 'ether') });
     var ethBalance = web3.eth.getBalance(dgp.address);
-    return dgp.supporters(supporterAddr)
-    .then(b=>{
-       assert.equal(b, web3.toWei(supporterDonationAmt*2, 'ether'), "supporter has 2 donations in contract");
-       assert.equal(ethBalance, web3.toWei(initFundingAmt + (2 * supporterDonationAmt), 'ether'), "9.2 ETH funded");
-    });
+    let b = await dgp.supporters(supporterAddr)
+    assert.equal(b, web3.toWei(supporterDonationAmt*2, 'ether'), "supporter has 2 donations in contract");
+    assert.equal(ethBalance, web3.toWei(initFundingAmt + (2 * supporterDonationAmt), 'ether'), "9.2 ETH funded");
+    
   });
 
   it("should allow admin to register a USD donation", function() {
@@ -193,7 +193,6 @@ contract('Dgp', function(accounts) {
     logBalance(clientAddr, "client");
     return dgp.minClientBalance()
     .then(b=>{
-      console.log("min balance: " + web3.fromWei(b,'ether'));
       return dgp.makePurchase(vendorAddr, purchaseAmt, {from: clientAddr, gasPrice: gasPrice, gasLimit: gasLimit});
     })
     
@@ -235,103 +234,74 @@ contract('Dgp', function(accounts) {
       assert.equal(client.depositedEndowments, 7000, "1 endowment deposited");
     });
   });
-  it("should set vendor balance after purchase", function() {
-    return dgp.vendors(vendorAddr).then( 
-      v=> { 
-        var vendor = new Vendor(v);
-        assert.equal(vendor.balance, 2000, "total sales = $20");
-    });
-  });
-  it("should allow client to make a third purchase", function() {
-    return dgp.makePurchase(vendorAddr, purchaseAmt+1000, {from: clientAddr, gasPrice: gasPrice})
-    .then(r=> {
-      mineBlock();
-      logGas('make 3rd purchase',r);
-      logBalance(clientAddr, "client");
-      return dgp.clients.call(clientAddr);
-    })
-    .then( c=> {
-      client = new Client(c);
-      assert.equal(client.checkingBalance, 3500, "checking balance reduced by purchase");
-    });
+
+  it("should set vendor balance after purchase", async function() {
+    let v = await dgp.vendors(vendorAddr);
+    var vendor = new Vendor(v);
+    assert.equal(vendor.balance, 2000, "total sales = $20");
   });
 
-  it("should allow admin to deposit unlocked DUST",function(){
-    return dgp.clients.call(clientAddr)
-    .then( c=> {
-      client = new Client(c);
-      return dgp.depositChecking(clientAddr,100,{from: adminAddr});
-    })
-    .then(r=>{
-      return dgp.clients.call(clientAddr);
-    })
-    .then(c=>{
-      var originalBalance = client.checkingBalance;
-      client = new Client(c);
-      assert.equal(originalBalance+100, client.checkingBalance, "checking balance increased");
-
-
-    });
+  it("should allow client to make a third purchase", async function() {
+    let r = await  dgp.makePurchase(vendorAddr, purchaseAmt+1000, {from: clientAddr, gasPrice: gasPrice});
+    mineBlock();
+    logGas('make 3rd purchase',r);
+    logBalance(clientAddr, "client");
+    let c = await dgp.clients.call(clientAddr);
+    client = new Client(c);
+    assert.equal(client.checkingBalance, 3500, "checking balance reduced by purchase");
   });
-  it("should allow admin to deposit locked DUST",function(){
-    return dgp.clients.call(clientAddr)
-    .then( c=> {
-      client = new Client(c);
-      return dgp.depositSavings(clientAddr,100,{from: adminAddr});
-    })
-    .then(r=>{
-      return dgp.clients.call(clientAddr);
-    })
-    .then(c=>{
-      var originalBalance = client.endowmentTotal;
-      client = new Client(c);
-      assert.equal(originalBalance+100, client.endowmentTotal, "savings balance increased");
 
+  it("should allow admin to deposit unlocked DUST",async function(){
+    let c = await dgp.clients.call(clientAddr);
+    client = new Client(c);
+    var originalBalance = client.checkingBalance;
 
-    });
-  });  
-
-  it("should allow vendor to request redemption", function() {
-    return dgp.redeemPurchases({from: vendorAddr, gasPrice: gasPrice})
-    .then(r=> {
-      logGas('redeem purchases',r);
-      return dgp.vendors(vendorAddr)
-    })
-    .then( v=> { 
-        var vendor = new Vendor(v);
-        assert.equal(vendor.balance, 0, "total sales = $0 after redemption");
-    });
+    let r = await dgp.depositChecking(clientAddr,100,{from: adminAddr});
+    c = await dgp.clients.call(clientAddr);
+    client = new Client(c);
+    assert.equal(originalBalance+100, client.checkingBalance, "checking balance increased");
   });
-    it("should allow admin to request redemption", function() {
-    return dgp.redeemPurchasesForVendor(vendorAddr,{from: adminAddr, gasPrice: gasPrice})
-    .then(r=> {
-      logGas('redeem purchases for vendor',r);
-      return dgp.vendors(vendorAddr)
-    })
-    .then( v=> { 
-        var vendor = new Vendor(v);
-        assert.equal(vendor.balance, 0, "total sales = $0 after admin redemption");
-    });
+
+  it("should allow admin to deposit locked DUST",async function(){
+    let c = await dgp.clients.call(clientAddr);
+    client = new Client(c);
+    var originalBalance = client.endowmentTotal;
+    let r = await dgp.depositSavings(clientAddr,100,{from: adminAddr});
+    c = await dgp.clients.call(clientAddr);
+    client = new Client(c);
+    assert.equal(originalBalance+100, client.endowmentTotal, "savings balance increased");
+ });  
+
+
+  it("should allow vendor to request redemption", async function() {
+    let r = await dgp.redeemPurchases({from: vendorAddr, gasPrice: gasPrice});
+    logGas('redeem purchases',r);
+    let v = await dgp.vendors(vendorAddr);
+    var vendor = new Vendor(v);
+    assert.equal(vendor.balance, 0, "total sales = $0 after redemption");
+  });
+
+  it("should allow admin to request redemption", async function() {
+    let r = await dgp.redeemPurchasesForVendor(vendorAddr,{from: adminAddr, gasPrice: gasPrice});
+    logGas('redeem purchases for vendor',r);
+    let v =  await dgp.vendors(vendorAddr);
+    var vendor = new Vendor(v);
+    assert.equal(vendor.balance, 0, "total sales = $0 after admin redemption");
   });
   
-  it("should allow superAdmin to tranfer contract ETH", function() {
-    return dgp.transferETH(adminAddr, web3.toWei(1,'ether'))
-    .then(r=>{
-      logGas('transfer ETH',r);
-    });
-
+  it("should allow superAdmin to tranfer contract ETH", async function() {
+    let r = await dgp.transferETH(adminAddr, web3.toWei(1,'ether'));
+    logGas('transfer ETH',r);
   });
 
-  it("should allow superadmin to selfdestruct", function() {
-    return dgp.terminate()
-    .then(r=> {
-      logGas('self destruct',r);
-      
-    });
+  it("should allow superadmin to selfdestruct", async function() {
+    let r = await dgp.terminate();
+    logGas('self destruct',r);
   });
+
   it("should log gas", function(){
-    console.log(gasList);
-    console.log("gas price: " + web3.fromWei(web3.eth.gasPrice,'wei'));
+    if (!suppressLogging) console.log(gasList);
+    if (!suppressLogging) console.log("gas price: " + web3.fromWei(web3.eth.gasPrice,'wei'));
     logBalance(superAdminAddr, "superAdmin");
     logBalance(adminAddr, "admin");
     logBalance(clientAddr, "client");
