@@ -2,7 +2,7 @@ var Dgp = artifacts.require("./Dgp.sol");
 var gasList = [];
 var gasPrice = 20000000000;
 var gasLimit = 120000;
-var skipThrows = true; //throws cost a lot of gas and are incorrectly consumed by truffle/testrpc, don't burn balance if this is set to false
+var skipThrows = false; //throws cost a lot of gas and are incorrectly consumed by truffle/testrpc, don't burn balance if this is set to false
 var suppressLogging = true;
 //var Web3 = require("web3");
 //var BN = require("bignumber.js");
@@ -64,7 +64,7 @@ contract('Dgp', function(accounts) {
   Dgp.deployed().then(i => dgp = i);
   
 
-  it("should have initial setup", function() {
+  it("should have initial setup", async function() {
     logBalance(superAdminAddr, "superAdmin");
     logBalance(adminAddr, "admin");
     logBalance(clientAddr, "client");
@@ -73,17 +73,14 @@ contract('Dgp', function(accounts) {
     logBalance(dgp.address, "contract");
 
 
-    return dgp.superAdmin()
-    .then(s=> {
-      assert.equal(s,superAdminAddr, "super set correctly");
-      return dgp.admin();
-    })
-    .then(a=>{
-      assert.equal(a,adminAddr, "admin set correctly");
-      return dgp.accountBalance();
-    })
-    .then(b => assert.equal(b.valueOf(), 0, "0 was the initial balance"));
+    let s = await dgp.superAdmin();
+    assert.equal(s,superAdminAddr, "super set correctly");
+    let a = await dgp.admin();
+    assert.equal(a,adminAddr, "admin set correctly");
+    let b = await dgp.accountBalance();
+    assert.equal(b.valueOf(), 0, "0 was the initial balance");
   });
+
   it("should have 9 ETH after admin funding", function() {
     var tx = web3.eth.sendTransaction({from: accounts[0], to: dgp.address, value: web3.toWei(initFundingAmt, 'ether') });
     var ethBalance = web3.eth.getBalance(dgp.address);
@@ -115,124 +112,118 @@ contract('Dgp', function(accounts) {
      .then(b=> assert.equal(b.valueOf(), initDonation, "$1000 is the balance after initial donation"));
   });
    
-  it("should not allow other account to register a donation", function() {
+  it("should not allow non admin account to register a donation", async function() {
      if (skipThrows) return;
-     return dgp.registerDonation(initDonation, {from: nonAdminAddr, gasPrice: gasPrice})
-     .then(assert.fail)
-     .catch(e=> assert(e.message.indexOf('invalid opcode') >= 0, "Non admin accounts can''t register a donation"));
+     try {
+       let r = await dgp.registerDonation(initDonation, {from: nonAdminAddr, gasPrice: gasPrice});
+     } catch (e) {
+      assert(e.message.indexOf('invalid opcode') >= 0, "Non admin accounts can''t register a donation");
+      return true;
+     }
+     throw new Error("allowed non admin account to register a donation")
   });
    
-  var client;
-
-  it("should allow admin to register a client", function() {
-    return dgp.registerClient(clientAddr, clientEndowment, 0,{from: adminAddr, gasPrice: gasPrice})
-    .then(r=> {
-      logGas('register client',r);
-      logBalance(clientAddr, "client");
-      return dgp.clients.call(clientAddr);
-    })
-    .then( c=> {
-      client = new Client(c);
-      assert.equal(client.endowmentTotal, clientEndowment, "newly registered client receives endowment");
-      assert.equal(client.startTime, web3.eth.getBlock(web3.eth.blockNumber).timestamp, "newly registered client gets startTime as default block.timestamp");
-    });
+  
+  it("should allow admin to register a client", async function() {
+    let r = await dgp.registerClient(clientAddr, clientEndowment, 0,{from: adminAddr, gasPrice: gasPrice});
+    logGas('register client',r);
+    logBalance(clientAddr, "client");
+    let c = await dgp.clients.call(clientAddr);
+    let client = new Client(c);
+    assert.equal(client.endowmentTotal, clientEndowment, "newly registered client receives endowment");
+    assert.equal(client.startTime, web3.eth.getBlock(web3.eth.blockNumber).timestamp, "newly registered client gets startTime as default block.timestamp");
   });
 
-  it("should not change account balance after registering client", function() {
-     return dgp.accountBalance().then(b=>assert.equal(b.valueOf(), initDonation, "account balance = init donation"));
+  it("should not change account balance after registering client", async function() {
+    let b = await dgp.accountBalance()
+    assert.equal(b.valueOf(), initDonation, "account balance = init donation");
   });
 
-  it("should update allocated after registering client", function() {
-     return dgp.allocated().then(a=>assert.equal(a.valueOf(), clientEndowment, "allocated = client endowment"));
-  });
-  it("should set vested to 0 after registering client", function() {
-     return dgp.getVested(clientAddr).then(a=>assert.equal(a.valueOf(), 0, "vested = 0"));
-  });
-  it("should allow admin to register a second client", function() {
-
-    return dgp.registerClient(clientAddr2, clientEndowment, 0,{from: adminAddr, gasPrice: gasPrice})
-    .then(r=> {
-      logGas('register client',r);
-      return dgp.clients.call(clientAddr2);
-    })
-    .then( c=> {
-      var c2 = new Client(c);
-      assert.equal(c2.endowmentTotal, clientEndowment, "newly registered client receives endowment");
-      assert.equal(c2.startTime, web3.eth.getBlock(web3.eth.blockNumber).timestamp, "newly registered client gets startTime as default block.timestamp");
-    });
+  it("should update allocated after registering client", async function() {
+     let a = await dgp.allocated();
+     assert.equal(a.valueOf(), clientEndowment, "allocated = client endowment");
   });
 
-  it("should allow admin to register a vendor", function() {
-
-    return dgp.registerVendor(vendorAddr,{from: adminAddr, gasPrice: gasPrice})
-    .then(r=> {
-      logGas('register vendor',r);
-      return dgp.vendors(vendorAddr);
-    })
-    .then( v=> {
-      var vendor = new Vendor(v);
-      assert.equal(vendor.registered, 1, "newly registered vendor set to registered");
-    });
+  it("should set vested to 0 after registering client", async function() {
+     let a = await dgp.getVested(clientAddr);
+     assert.equal(a.valueOf(), 0, "vested = 0");
   });
 
-  it("should not allow a client to be registered twice", function() {
-     if (skipThrows) return;
-     return dgp.registerClient(clientAddr, clientEndowment, 0,{from: adminAddr, gasPrice: gasPrice})
-     .then(assert.fail)
-     .catch(e=> assert(e.message.indexOf('invalid opcode') >= 0, "Client can be registered 2x!"));
+  it("should allow admin to register a second client", async function() {
+
+    let r = await dgp.registerClient(clientAddr2, clientEndowment, 0,{from: adminAddr, gasPrice: gasPrice});
+    logGas('register client',r);
+    let c = await dgp.clients.call(clientAddr2);
+    let c2 = new Client(c);
+    assert.equal(c2.endowmentTotal, clientEndowment, "newly registered client receives endowment");
+    assert.equal(c2.startTime, web3.eth.getBlock(web3.eth.blockNumber).timestamp, "newly registered client gets startTime as default block.timestamp");
   });
 
-  it("should set vested to $70 after 1 redepemption period passed", function() {
+  it("should allow admin to register a vendor", async function() {
+    let r = await dgp.registerVendor(vendorAddr,{from: adminAddr, gasPrice: gasPrice});
+    logGas('register vendor',r);
+    let v = await dgp.vendors(vendorAddr);
+    var vendor = new Vendor(v);
+    assert.equal(vendor.registered, 1, "newly registered vendor set to registered");
+  });
+
+  it("should not allow a client to be registered twice", async function() {
+    if (skipThrows) return;
+    try {
+      let r = await dgp.registerClient(clientAddr, clientEndowment, 0,{from: adminAddr, gasPrice: gasPrice});
+    } catch (e) {
+      assert(e.message.indexOf('invalid opcode') >= 0, "second registration failed");
+      return true;
+    }
+    throw new Error("Client can be registered 2x!");
+  });
+
+  it("should set vested to $70 after 1 redepemption period passed", async function() {
     increaseDays(8);
     mineBlock();
     //console.log(web3.eth.getBlock(web3.eth.blockNumber).timestamp);
-    return dgp.getVested(clientAddr).then(a=>assert.equal(a.valueOf(), 7000, "vested = $70"));
+    let a = await dgp.getVested(clientAddr);
+    assert.equal(a.valueOf(), 7000, "vested = $70");
   });
 
-  it("should allow client to make purchase", function() {
+  it("should allow client to make purchase", async function() {
     logBalance(clientAddr, "client");
-    return dgp.minClientBalance()
-    .then(b=>{
-      return dgp.makePurchase(vendorAddr, purchaseAmt, {from: clientAddr, gasPrice: gasPrice, gasLimit: gasLimit});
-    })
-    
-    .then(r=> {
-      mineBlock();
-      logGas('make purchase',r);
-      logBalance(clientAddr, "client");
-      return dgp.clients.call(clientAddr);
-    })
-    .then( c=> {
-      client = new Client(c);
-      assert.equal(client.checkingBalance, 7000 - purchaseAmt, "checking balance reduced by purchase");
-      assert.equal(client.depositedEndowments, 7000, "1 endowment deposited");
-    });
+    let b = await dgp.minClientBalance();
+    let r = await dgp.makePurchase(vendorAddr, purchaseAmt, {from: clientAddr, gasPrice: gasPrice, gasLimit: gasLimit});
+    mineBlock();
+    logGas('make purchase',r);
+    logBalance(clientAddr, "client");
+    let c = await dgp.clients.call(clientAddr);
+    let client = new Client(c);
+    assert.equal(client.checkingBalance, 7000 - purchaseAmt, "checking balance reduced by purchase");
+    assert.equal(client.depositedEndowments, 7000, "1 endowment deposited");
   });
 
-  it("should not allow client to purchase from unregistered vendor", function(){
+  it("should not allow client to purchase from unregistered vendor", async function(){
     if (skipThrows) return;
-    return dgp.makePurchase(unRegisteredVendorAddr, purchaseAmt, {from: clientAddr, gasPrice: gasPrice})
-    .then(assert.fail)
-     .catch(e=> assert(e.message.indexOf('invalid opcode') >= 0, "Client can purchase from unregistered vendor!"));
+    try {
+      let r = await dgp.makePurchase(unRegisteredVendorAddr, purchaseAmt, {from: clientAddr, gasPrice: gasPrice});
+    } catch (e) {
+      assert(e.message.indexOf('invalid opcode') >= 0, "purchase failed");
+      return true;
+    }
+    throw new Error("Client can purchase from unregistered vendor!");
   });
 
-  it("should reduce vested after purchase", function() {
-    return dgp.getVested(clientAddr).then(a=>assert.equal(a.valueOf(), 0, "vested = $0"));
+  it("should reduce vested after purchase", async function() {
+    let a = await dgp.getVested(clientAddr);
+    assert.equal(a.valueOf(), 0, "vested = $0");
   });
   
-  it("should allow client to make a second purchase", function() {
-    return dgp.makePurchase(vendorAddr, purchaseAmt+1000, {from: clientAddr, gasPrice: gasPrice})
-    .then(r=> {
-      mineBlock();
-      logGas('make 2nd purchase',r);
-      logBalance(clientAddr, "client");
-      return dgp.clients.call(clientAddr);
-    })
-    .then( c=> {
-      client = new Client(c);
-      assert.equal(client.checkingBalance, 5000, "checking balance reduced by purchase");
-      assert.equal(client.depositedEndowments, 7000, "1 endowment deposited");
-    });
+  it("should allow client to make a second purchase", async function() {
+    let r = await dgp.makePurchase(vendorAddr, purchaseAmt+1000, {from: clientAddr, gasPrice: gasPrice});
+    mineBlock();
+    logGas('make 2nd purchase',r);
+    logBalance(clientAddr, "client");
+    let c = await dgp.clients.call(clientAddr);
+    client = new Client(c);
+    assert.equal(client.checkingBalance, 5000, "checking balance reduced by purchase");
+    assert.equal(client.depositedEndowments, 7000, "1 endowment deposited");
   });
 
   it("should set vendor balance after purchase", async function() {
@@ -253,7 +244,7 @@ contract('Dgp', function(accounts) {
 
   it("should allow admin to deposit unlocked DUST",async function(){
     let c = await dgp.clients.call(clientAddr);
-    client = new Client(c);
+    let client = new Client(c);
     var originalBalance = client.checkingBalance;
 
     let r = await dgp.depositChecking(clientAddr,100,{from: adminAddr});
@@ -264,7 +255,7 @@ contract('Dgp', function(accounts) {
 
   it("should allow admin to deposit locked DUST",async function(){
     let c = await dgp.clients.call(clientAddr);
-    client = new Client(c);
+    let client = new Client(c);
     var originalBalance = client.endowmentTotal;
     let r = await dgp.depositSavings(clientAddr,100,{from: adminAddr});
     c = await dgp.clients.call(clientAddr);
